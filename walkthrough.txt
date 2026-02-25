@@ -1,0 +1,27 @@
+# Active Directory Machine Walkthrough
+
+## 1. Initial Reconnaissance
+- Tool: Nmap
+- Commands: `nmap -sS -sV -O <target>`
+- Identify open ports and services.
+
+## 2. Enumeration
+- Tool: enum4linux & SMBclient
+- Commands: `enum4linux -a <target>` and `smbclient -L //<target>`
+- Gather usernames and shares.
+
+## 3. Gaining Access
+- Exploit: Weak passwords
+- Methods: Brute force using Hydra.
+
+## 4. Privilege Escalation
+- Tool: PowerUp
+- Commands: `Import-Module PowerUp; Invoke-AllChecks`
+- Identify potential privilege escalation vectors.
+
+## 5. Post-exploitation
+- Maintain access using WebShells or other backdoors.
+
+## 6. Flag Retrieval
+- Logical path through the machine to retrieve the flag.
+- Final command example: `type C:\path\to\flag.txt`
