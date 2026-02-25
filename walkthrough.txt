@@ -1,27 +1,174 @@
-# Active Directory Machine Walkthrough
+============================================================
+        ACTIVE DIRECTORY MACHINE – FULL WALKTHROUGH
+============================================================
 
-## 1. Initial Reconnaissance
-- Tool: Nmap
-- Commands: `nmap -sS -sV -O <target>`
-- Identify open ports and services.
+Target Domain: WRK.tryhackme.loc
+Target Machine: 10.200.150.20
+Domain Controller: DC.tryhackme.loc
 
-## 2. Enumeration
-- Tool: enum4linux & SMBclient
-- Commands: `enum4linux -a <target>` and `smbclient -L //<target>`
-- Gather usernames and shares.
+============================================================
+1. INITIAL RECONNAISSANCE
+============================================================
 
-## 3. Gaining Access
-- Exploit: Weak passwords
-- Methods: Brute force using Hydra.
+Target identified:
+10.200.150.20
 
-## 4. Privilege Escalation
-- Tool: PowerUp
-- Commands: `Import-Module PowerUp; Invoke-AllChecks`
-- Identify potential privilege escalation vectors.
+Open ports discovered:
+- 445 (SMB)
+- 3389 (RDP)
+- 3306 (MySQL)
+- 8080 (HTTP - Apache Tomcat)
+- Other standard Windows services
 
-## 5. Post-exploitation
-- Maintain access using WebShells or other backdoors.
+Port 8080 was hosting Apache Tomcat.
 
-## 6. Flag Retrieval
-- Logical path through the machine to retrieve the flag.
-- Final command example: `type C:\path\to\flag.txt`
+============================================================
+2. WEB ENUMERATION – TOMCAT
+============================================================
+
+Accessed:
+http://10.200.150.20:8080
+
+The endpoint /manager/status disclosed credentials:
+
+Username: tomcat
+Password: s3cret
+
+Successfully authenticated to Tomcat Manager interface.
+
+============================================================
+3. INITIAL ACCESS – WAR FILE UPLOAD
+============================================================
+
+Using msfvenom, a malicious WAR reverse shell was generated.
+
+The WAR file was uploaded through Tomcat Manager.
+
+After deployment, triggering the application established a reverse
+shell connection back to the attacker machine.
+
+Initial access obtained as the Tomcat service user.
+
+============================================================
+4. LOCAL ENUMERATION
+============================================================
+
+During enumeration:
+
+- Located first flag inside C drive.
+
+THM{39f673f8-d81c-4004-8c75-f901f6bf9d97}
+
+============================================================
+5. PRIVILEGE ESCALATION – TOKEN IMPERSONATION
+============================================================
+
+The host was vulnerable to token impersonation.
+
+Tool used:
+PrintSpoofer.exe
+
+Successfully escalated privileges to:
+
+NT AUTHORITY\SYSTEM
+
+
+============================================================
+6. CREDENTIAL DUMPING – MIMIKATZ
+============================================================
+
+With SYSTEM privileges, Mimikatz was executed.
+
+Commands used:
+
+lsadump::secrets
+lsadump::sam
+
+Recovered:
+
+Local Administrator NTLM hash:
+54df032b24c36aaabb1c7f55d66d299b
+
+Service account credentials:
+
+Username: svc.callback
+Password: qvBVAj9avM3ykcbf9s
+
+============================================================
+7. LATERAL MOVEMENT – RDP
+============================================================
+
+Port 3389 was open.
+
+Authenticated via RDP using:
+
+svc.callback / qvBVAj9avM3ykcbf9s
+
+Successfully logged into 10.200.150.20.
+
+============================================================
+8. ACTIVE DIRECTORY ENUMERATION
+============================================================
+
+Using PowerView and AD cmdlets, ACL misconfigurations were identified.
+
+svc.callback had write permissions over privileged AD objects.
+
+============================================================
+9. DOMAIN PRIVILEGE ESCALATION
+============================================================
+
+Executed:
+
+Add-DomainGroupMember -Identity "Domain Admins" -Members "svc.callback"
+
+Successfully added svc.callback to Domain Admins.
+
+After refreshing the session, Domain Admin privileges were confirmed.
+
+============================================================
+10. DOMAIN CONTROLLER COMPROMISE
+============================================================
+
+Authenticated to:
+
+DC.tryhackme.loc
+
+Accessed as Domain Admin.
+
+============================================================
+11. FINAL FLAG
+============================================================
+
+Attempted to read:
+C:\flag.txt
+
+Initially received:
+Access Denied
+
+Modified file permissions to grant Full Control to svc.callback.
+
+Successfully retrieved final flag:
+
+THM{0e32e392-8c9b-453d-92a0-e6b8cf735aa5}
+
+============================================================
+ATTACK CHAIN SUMMARY
+============================================================
+
+1. Tomcat credential disclosure
+2. WAR reverse shell upload
+3. SYSTEM privilege escalation (PrintSpoofer)
+4. Credential dumping (Mimikatz)
+5. Lateral movement via RDP
+6. Active Directory ACL abuse
+7. Domain Admin escalation
+8. Domain Controller compromise
+9. Final flag retrieval
+
+============================================================
+END OF WALKTHROUGH
+============================================================
+
+
+
